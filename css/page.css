@@ -1,0 +1,19 @@
+.page_btn {
+    margin-right: 7px;
+}
+
+.page_btn :focus {
+    background-color: #bababa;
+    border-color: #bababa;
+    color: #fff;
+}
+.page_input{
+    width: 40px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 5px;
+    text-align: center;
+    margin-right: 7px;
+}

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分组广告</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.min862f.css" rel="stylesheet">
+    <script src="easyUI/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="easyUI/layer.min.js"></script>
+    <script src="http://malsup.github.com/jquery.form.js"></script>
+    <style>
+        td{
+            word-break: break-all;
+            word-wrap: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper wrapper-content animated fadeInRight">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-content">
+                        <h3><span class="text-navy">上传分组视频和图片</span></h3>
+                        <form id="formData" action="audioAndPic.php" class="form-horizontal" enctype="multipart/form-data" method="post">
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <label for="group_id" class="control-label col-sm-3">选择分组:</label>
+                                <div class="col-sm-5">
+                                    <select name="group_id" id="group_id" class="form-control">
+                                        <option value="0">全部分组</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="showForm" class="hide">
+                                <div class="hr-line-dashed"></div>
+                                <div class="form-group">
+                                    <label for="ad_name" class="control-label col-sm-3">名称:</label>
+                                    <div class="col-sm-5">
+                                        <input type="text" id="ad_name" name="ad_name" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label col-sm-3">机器人视频:</label>
+                                    <div class="col-sm-5">
+                                        <a href="javascript:;" class="btn btn-w-m btn-primary submit_btn" style="position: relative;">选择视频文件上传
+                                            <input id="robotVideo" name="robotVideo" type="file" style="opacity: 0;position: absolute;top:0;right:0;" onchange="chooseVideo();">
+                                        </a>
+                                        <label id="videoLabel"></label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label col-sm-3">手机端图片:</label>
+                                    <div class="col-sm-5">
+                                        <a href="javascript:;" class="btn btn-w-m btn-primary submit_btn" style="position: relative;">选择图片上传
+                                            <input id="mobilePic" name="mobilePic" type="file" style="opacity: 0;position: absolute;top:0;right:0;" onchange="choosePic();">
+                                        </a>
+                                        <label id="picLabel"></label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div style="text-align: center" class="col-sm-10">
+                                            <input id="enabled_flag" name="enabled_flag" type="checkbox">
+                                            <input id="hidden" type="hidden" name="hidden" value="N">
+                                            <label class="control-label" for="enabled_flag">是否启用</label>
+
+                                        <div id="check2" style="display: inline;margin-left: 10%">
+                                            <input id="re_enabled_flag" name="re_enabled_flag" type="checkbox">
+                                            <input type="hidden" id="re_hidden" name="re_hidden" value="N">
+                                            <label class="control-label" for="re_enabled_flag">是否启用桌面悬浮球</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="hr-line-dashed"></div>
+                                <div class="form-group" style="text-align: center">
+                                    <div class="col-sm-10">
+                                        <a class="btn btn-w-m btn-primary submit_btn" id="submit">提交</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <br>
+                <br>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                        <span class="sr-only">0% Complete</span>
+                    </div>
+                </div>
+                <div class="hr-line-dashed"></div>
+                <div class="ibox float-e-margins" id="tableData">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script id="tableScript" type="text/html">
+    <table id="info_table" class="table table-striped table-bordered table-hover dataTables-example" style="width: 90%;margin:0 auto">
+        <thead>
+            <tr>
+                <th>uid</th>
+                <th>name</th>
+                <th>rb_pic_url</th>
+                <th>rb_pic_md5</th>
+                <th>rb_audio_url</th>
+                <th>rb_audio_md5</th>
+                <th>mb_pic_url</th>
+                <th>mb_pic_md5</th>
+                <th>enabled_flag</th>
+                <th>update_time</th>
+                <th>rb_content</th>
+                <th>group_id</th>
+                <th>recommend_enabled_flag</th>
+            </tr>
+        </thead>
+        <tbody>
+            <%for(var i= 0;i < list.length;i++){
+            if(list[i].name == null) list[i].name = "";
+            if(list[i].rb_pic_url == null) list[i].rb_pic_url = "";
+            if(list[i].rb_pic_md5 == null) list[i].rb_pic_md5 = "";
+            if(list[i].rb_audio_url == null) list[i].rb_audio_url = "";
+            if(list[i].rb_audio_md5 == null) list[i].rb_audio_md5 = "";
+            if(list[i].mb_pic_url == null) list[i].mb_pic_url = "";
+            if(list[i].mb_pic_md5 == null) list[i].mb_pic_md5 = "";
+            if(list[i].enabled_flag == null) list[i].enabled_flag = "";
+            if(list[i].update_time == null) list[i].update_time = "";
+            if(list[i].rb_content == null) list[i].rb_content = "";
+            if(list[i].group_id == null) list[i].group_id = "";
+            if(list[i].recommend_enabled_flag == null) list[i].recommend_enabled_flag = "";%>
+            <tr>
+                <td><%:=list[i].uid%></td>
+                <td><%:=list[i].name%></td>
+                <td><%:=list[i].rb_pic_url%></td>
+                <td><%:=list[i].rb_pic_md5%></td>
+                <td><%:=list[i].rb_audio_url%></td>
+                <td><%:=list[i].rb_audio_md5%></td>
+                <td><%:=list[i].mb_pic_url%></td>
+                <td><%:=list[i].mb_pic_md5%></td>
+                <td><%:=list[i].enabled_flag%></td>
+                <td><%:=list[i].update_time%></td>
+                <td><%:=list[i].rb_content%></td>
+                <td><%:=list[i].group_id%></td>
+                <td><%:=list[i].recommend_enabled_flag%></td>
+            </tr>
+            <%}%>
+        </tbody>
+    </table>
+</script>
+<script src="./js/template.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".progress").hide();
+        $.ajax({
+            url: 'audioAndPic.php?method=getGroupId',
+            async: true,
+            cache: false,
+            type: 'GET',
+            dataType: 'json',
+            success: function (res) {
+                var option = '';
+                $.each(res,function (i,v) {
+                    option += '<option value="'+v.group_id+'">'+v.Description+'</option>';
+                })
+                $("#group_id").append(option);
+            },
+            error: function (err) {
+                layer.msg("查询数据失败!"+err);
+            }
+        })
+        showTableData(0);
+    })
+    //监听selectu选中值的改变
+    $("#group_id").change(function () {
+        var selectId = $("#group_id").val();
+        if(selectId != 0){
+            $("#showForm").removeClass("hide");
+        }else {
+            $("#showForm").addClass("hide");
+        }
+        showTableData(selectId);
+    })
+    //监听checkbox改变事件
+    $("#enabled_flag").change(function () {
+        if($("#enabled_flag").is(':checked')){
+            $("#hidden").attr('value','Y');
+        }else{
+            $("#hidden").attr('value','N');
+        }
+    })
+
+
+    $("#re_enabled_flag").change(function () {
+        if($("#re_enabled_flag").is(':checked')){
+            $("#re_hidden").attr('value','Y');
+        }else{
+            $("#re_hidden").attr('value','N');
+        }
+    })
+    function showTableData(groupId) {
+        $.ajax({
+            url: 'audioAndPic.php?method=selectGroupData',
+            async: true,
+            cache: false,
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                groupId: groupId
+            },
+            success: function (res) {
+                console.log(res);
+                var tableHtml = template($("#tableScript").html(),{list:res});
+                $("#tableData").html(tableHtml);
+            },
+            error: function (err) {
+                layer.msg("查询数据失败!"+err);
+            }
+        })
+    }
+
+    function chooseVideo() {
+        var file = document.getElementById("robotVideo").files[0];
+        var videoName = file.name;
+        document.getElementById("videoLabel").innerHTML = videoName;
+    }
+
+    function choosePic() {
+        var pic = document.getElementById("mobilePic").files[0];
+        var picName = pic.name;
+        document.getElementById("picLabel").innerHTML = picName;
+    }
+
+
+    $('#submit').click(function () {
+        $.ajax({
+            url: 'audioAndPic.php?method=submitData',
+            async: true,
+            cache: false,
+            type: 'GET',
+            success: function (oRsp) {
+                var index = layer.alert();
+                progress_upload(index);
+            },
+            error: function (err) {
+                layer.msg('获取数据失败'+err);
+            }
+        })
+    })
+
+    function progress_upload(index) {
+        layer.close(index);//index标记弹框
+        $("#formData").ajaxSubmit({
+            dataType: 'json',
+            beforeSend: function () {
+                $(".progress").show();
+            },
+            uploadProgress: function (event, position, total, percentComplete) {
+                var percentVal = percentComplete + '%';
+                $(".progress-bar").width(percentComplete + '%');
+                $(".progress-bar").html(percentVal);
+                $(".sr-only").html(percentComplete + '%');
+            },
+            success: function (oRsp) {
+                $('.progress').hide();
+                layer.msg(oRsp.msg);
+                setTimeout("window.location.reload();",2000);
+            },
+            error: function (err) {
+                console.log(err);
+                layer.msg('Fail to upload the files!');
+            }
+        });
+        return false;
+    }
+</script>
+</html>

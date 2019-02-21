@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>元宵活动运营数据统计</title>
+    <link href="css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+    <link href="css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <link href="css/animate.min.css" rel="stylesheet">
+    <link href="css/style.min862f.css?v=4.1.0" rel="stylesheet">
+    <link href="css/dataTables.bootstrap.css" rel="stylesheet">
+
+    <script type="text/javascript" src="easyUI/jquery.min.js"></script>
+    <script type="text/javascript" src="easyUI/jquery.easyui.min.js"></script>
+    <script src="easyUI/layer.min.js"></script>
+    <script src="js/tableExport.js"></script>
+    <script src="js/FileSaver.js"></script>
+    <script src="js/Blob.js"></script>
+</head>
+<body>
+    <div class="wrapper wrapper-content animated fadeInRight">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-content">
+                        <h3><span class="text-navy">查询元宵活动运营数据</span></h3>
+                        <form action="statisticsLantern.php" enctype="multipart/form-data">
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <div class="col-sm-12">
+                                    <label for="submit">点击按钮查询礼品券信息：</label>
+                                    <a id="submit" class="btn btn-w-m btn-primary submit_btn" onclick="selectData();">查询</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="ibox-content dataTables_wrapper form-inline" id="tableContent"></div>
+                    <div class="hr-line-dashed"></div>
+                    <form action="statisticsLantern.php" enctype="multipart/form-data">
+                        <div class="col-sm-4" style="margin-left: 2%">
+                            <label for="coupons">查询中奖机器人信息：</label>
+                            <select class="form-control" name="coupons" id="coupons" style="margin-top: 20px;margin-bottom: 40px">
+                                <option value="0">全部</option>
+                                <option value="1">爱手工礼品券</option>
+                                <option value="2">68折扣券</option>
+                            </select>
+                            <a id="submit2" class="btn btn-w-m btn-primary submit_btn col-md-offset-3" onclick="selectPhoneNumber();" style="display: inline;"><strong>查询</strong></a>
+                            <a class="btn btn-w-m btn-primary submit_btn btn_export" style="display: inline;margin-left: 10%;"><strong>导出excel</strong></a>
+                        </div>
+                    </form>
+                    <div class="ibox loadding-image hide">
+                        <div class="">
+                            <div class="spiner-example">
+                                <div class="sk-spinner sk-spinner-cube-grid">
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                    <div class="sk-cube"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ibox-content dataTables_wrapper form-inline" id="tableData"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script id="my_table" type="text/html">
+    <table id="myTable" class="table table-striped table-bordered table-hover dataTables-example" style="width: 1020px;margin:0 auto">
+        <thead>
+        <tr>
+            <th>爱手工券的数量</th>
+            <th>68券的数量</th>
+            <th>元宵活动参与人数</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td><%:=list.coupon_num%></td>
+            <td><%:=list.coupon68_num%></td>
+            <td><%:=list.attendNum%></td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+<script id="mobileTable" type="text/html">
+    <table id="robotTable" class="table table-striped table-bordered table-hover dataTables-example" style="width: 1020px;margin:0 auto">
+        <thead>
+        <tr>
+            <th>优惠券类型</th>
+            <th>机器人序列号</th>
+            <th>手机号</th>
+        </tr>
+        </thead>
+        <tbody>
+        <%for(var i=0;i< arr.obj.length;i++){
+        for(var j=0;j< arr.obj[i].mobile.length;j++){
+        %>
+        <tr>
+            <td><%:=arr.obj[i].Description%></td>
+            <td><%:=arr.obj[i].robot%></td>
+            <td><%:=arr.obj[i].mobile[j]%></td>
+        </tr>
+        <%}%>
+        <%}%>
+        </tbody>
+    </table>
+</script>
+<script src="./js/template.js"></script>
+<script>
+    $(document).ready(function () {
+
+    });
+    function selectData(){
+        $.ajax({
+            url: '/statisticsLantern.php?method=searchAttendNum',
+            async: true,
+            cache: false,
+            type: 'GET',
+            dataType: 'json',
+            success: function (oRsp) {
+                console.log(oRsp.data);
+                var html = template($('#my_table').html(),{list:oRsp.data});
+                $('#tableContent').html(html);
+            },
+            error:function(strErr) {
+                alert('查询数据失败:' + strErr.status + ':' + strErr.statusText);
+            }
+        })
+    }
+    
+    function selectPhoneNumber() {
+        var coupon_type = document.getElementById('coupons').value;
+        $.ajax({
+            url: '/statisticsLantern.php?method=searchPhoneNum',
+            async: true,
+            cache: false,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                coupon_type : coupon_type
+            },
+            beforeSend: function () {
+                $('.loadding-image').removeClass('hide');
+            },
+            success: function (oRsp) {
+                console.log(oRsp);
+                var dataHtml = template($('#mobileTable').html(),{arr:oRsp});
+                $('#tableData').html(dataHtml);
+            },
+            complete: function () {
+                $('.loadding-image').addClass('hide');
+            },
+            error: function (strErr) {
+                alert('查询数据失败:' + strErr.status + ':' + strErr.statusText);
+            }
+        })
+    }
+
+    $('.btn_export').linkbutton({
+        onClick: function () {
+            tableExport('robotTable', '获奖机器人相关信息', 'xls');
+        }
+    })
+
+</script>
+</html>

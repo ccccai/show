@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询机器人序列号</title>
+    <link rel="stylesheet" href="css/bootstrap.min14ed.css">
+    <link rel="stylesheet" href="css/style.min862f.css">
+    <script type="text/javascript" src="easyUI/jquery.min.js"></script>
+    <script type="text/javascript" src="easyUI/jquery.easyui.min.js"></script>
+    <script src="easyUI/layer.min.js"></script>
+</head>
+<body class="gray-bg laydate_body" style="padding-top: 20px;">
+<div class="row" style="max-width: 580px; text-align: left; margin:0 auto;">
+    <div class="col-sm-5" style="width:600px">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title" style="margin-top: 10px">
+                <h2 class="m-t-none m-b">输入机器人ID，查询机器人序列号</h2>
+                <div class="ibox-content">
+                    <form style="height: 175px;margin-bottom: 10%" enctype="multipart/form-data" action="statisticsLantern.php">
+                        <div class="form-group">
+                            <div class="form-group" style="padding: 30px">
+                                <div class="col-sm-4">
+                                    <label class="control-label" style="padding-top: 10px;text-align: right;" for="robotId">请输入机器人ID:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" id="robotId" name="robotId" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 50px">
+                                <div class="col-sm-12 " style="text-align:center">
+                                    <a class="btn btn-w-m btn-primary submit_btn2" onclick="selectID();"><strong>查询</strong></a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="hr-line-dashed"></div>
+                    <div class="form-group" style="height: 175px;padding: 30px;margin-top: 70px">
+                        <div class="col-sm-4">
+                            <label class="control-label" style="padding-top: 10px;">机器人序列号:</label>
+                        </div>
+                        <div id="productId" class="col-sm-8" style="width: 249px;height: 34px;border-bottom: 1px solid #E5E6E7;line-height: 34px">
+                        </div>
+                    </div>
+                    <div class="hr-line-dashed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    function selectID() {
+        var robotId = $('#robotId').val();
+        if(robotId==null||robotId==""){
+            layer.msg('请输入机器人ID进行查询！');
+            return false;
+        }
+        $.ajax({
+            url: '/statisticsLantern.php?method=selectRobotId',
+            async: true,
+            cache: false,
+            type: 'POST',
+            data: {robotId: robotId},
+            dataType: 'json',
+            success: function (oRsp) {
+                $('#productId').html(oRsp.productId);
+                layer.msg(oRsp.msg);
+            },
+            error: function () {
+                alert("获取数据失败");
+            }
+        })
+    }
+</script>
+</html>
+

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传视频文件</title>
+    <link href="css/bootstrap.min14ed.css?v=3.3.6" rel="stylesheet">
+    <link href="css/font-awesome.min93e3.css?v=4.4.0" rel="stylesheet">
+    <link href="css/animate.min.css" rel="stylesheet">
+    <link href="css/style.min862f.css?v=4.1.0" rel="stylesheet">
+
+    <script type="text/javascript" src="easyUI/jquery.min.js"></script>
+    <script type="text/javascript" src="easyUI/jquery.easyui.min.js"></script>
+    <script src="easyUI/layer.min.js"></script>
+    <script src="http://malsup.github.com/jquery.form.js"></script>
+    <style>
+        .changeStyle{
+            position: relative;
+        }
+        .changeStyle input{
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper wrapper-content animated fadeInRight">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-content">
+                        <h3><span class="text-navy">请完善需上传视频的相关信息</span></h3>
+                        <form id="formData" action="uploadVideo.php" method="post" enctype="multipart/form-data" class="form-horizontal">
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label" for="url">请输入URL:</label>
+                                <div class="col-sm-3">
+                                    <input class="form-control" type="url" id="url" name="url">
+                                </div>
+                            </div>
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">是否启用:</label>
+                                <div class="col-sm-3">
+                                    <select class="form-control" name="enabled_flag" id="enabled_flag">
+                                        <option value="Y">Y</option>
+                                        <option value="N">N</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <div class="col-sm-3 col-sm-offset-3">
+                                    <a href="javascript:;" class="btn btn-w-m btn-primary submit_btn changeStyle">选择视频文件上传
+                                        <input id="addFile" name="addFile" type="file" style="opacity: 0" onchange="chooseFile();">
+                                    </a>
+                                    <lable id="fileName">&nbsp;&nbsp;&nbsp;&nbsp;</lable>
+                                </div>
+                            </div>
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <div class="col-sm-3 col-sm-offset-3">
+                                    <a id="submit" class="btn btn-w-m btn-primary submit_btn">提交</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <br>
+    <div class="progress">
+        <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+            <span class="sr-only">0% Complete</span>
+        </div>
+    </div>
+</body>
+<script>
+    $(document).ready(function () {
+        $('.progress').hide();
+    });
+
+    function chooseFile() {
+        var selectedFile = document.getElementById("addFile").files[0];
+        var fileName = selectedFile.name;
+        document.getElementById("fileName").innerHTML = fileName;
+    }
+        $('#submit').linkbutton({
+            onClick: function () {
+                var selectedFile = document.getElementById("addFile").files[0];
+                if(selectedFile==null||selectedFile==""){
+                    layer.msg("请选择视频文件");
+                    return false;
+                }
+                var packageName = selectedFile.name;
+
+                $.ajax({
+                    url : '/uploadVideo.php',
+                    async : true,
+                    cache : false,
+                    type  : 'GET',
+                    data: {
+                        packageName: packageName,
+                    },
+                    dataType:'json',//处理发送与接收的json数据
+                    success:function(oRsp) {
+
+                        var index = layer.alert();
+                        progress_upload(index);
+
+                    },
+                    error:function(strErr)
+                    {
+                        alert('获取数据失败:' + strErr.status + ':' + strErr.statusText);
+                    }
+                })
+            }
+        })
+
+    //添加上传进度
+    function progress_upload(index) {
+        layer.close(index);
+        $('#formData').ajaxSubmit({
+            dataType: 'json',
+            beforeSend: function () {
+                $('.progress').show();
+            },
+            uploadProgress: function (event, position, total, percentComplete) {
+                var percentVal = percentComplete + '%';
+                $(".progress-bar").width(percentComplete + '%');
+                $(".progress-bar").html(percentVal);
+                $(".sr-only").html(percentComplete + '%');
+            },
+            success: function (oRsp) {
+                layer.msg(oRsp.msg);
+                $('.progress').hide();
+                setTimeout("window.location.reload();",2000);
+            },
+            error: function (e) {
+                console.log(e);
+                layer.msg("视频上传失败");
+            }
+        });
+        return false;
+    }
+</script>
+</html>

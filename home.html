@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Home</title>
+    <script type="text/javascript" src="easyUI/jquery.min.js"></script>
+</head>
+<style>
+    body {
+        background-color: #595B5D;
+        margin: 0;
+    }
+
+    ul {
+        -webkit-padding-start: 0px;
+        padding-top: 20px;
+    }
+
+    li {
+        list-style-type: none;
+        padding: 20px 0 20px 0;
+        display: inline;
+    }
+
+    a {
+        text-decoration: none;
+        color: #fafafa;
+        text-align: center;
+        font-size: 17px;
+        padding: 20px 0 20px 5px;
+        border-color: transparent;
+        display: block;
+    }
+
+    li a:hover {
+        background: #3C3F41 !important;
+    }
+</style>
+<body>
+<ul>
+    <li><a href="index.php" target="index1" style="background: #3C3F41">首页</a></li>
+    <li><a href="statics_v2.php" target="index1">Statics</a></li>
+    <li><a href="statics_v3.php" target="index1">应用使用次数统计</a></li>
+    <li><a href="statics_v4.php" target="index1">应用使用时长统计</a></li>
+</ul>
+</body>
+<script>
+    $(function () {
+        $("a").click(function () {
+            $("a").css('background','#595B5D');
+            $(this).css('background','#3C3F41');
+        });
+    });
+</script>
+</html>

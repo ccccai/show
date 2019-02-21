@@ -1,0 +1,403 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Statics</title>
+	<link rel="stylesheet" type="text/css" href="easyUI/themes/default/easyui.css">
+	<link rel="stylesheet" type="text/css" href="easyUI/themes/icon.css">
+	<script type="text/javascript" src="easyUI/jquery.min.js"></script>
+	<script type="text/javascript" src="easyUI/jquery.easyui.min.js"></script>
+	<script src="highcharts/highcharts.js"></script>
+	<script src="highcharts/modules/exporting.js"></script>
+</head>
+<body>
+	<div id="head_bar">
+		<div id="pie_area_select" class="easyui-combotree" style="width:150px;"></div>
+	</div>
+	<div style="height:350px;margin-top:10px;">
+		<div id="pie_matrix_group" style="float:left;width:50%;height:100%"></div>
+		<div id="pie_matrix_detail" style="float:left;width:50%;height:100%"></div>
+	</div>
+	<div id="line_grid_area"></div>
+<script>
+/*
+ * 显示等待界面
+ * @param require string strMsg,界面要显示的信息
+ * @param optional bool bAddCount = false,是否同时增加隐藏次数，用于在调用HideFullMask时确认是否真正需要隐藏屏蔽层
+ * @return void
+ */
+function SetFullMask(strMsg,bAddCount)
+{
+	if (typeof(m_oFullMaskTip) == "undefined")
+	{
+		m_oFullMaskTip = new function()
+		{
+			var m_oMask	= $('<div class="window-mask" style="z-index:99999"></div>').appendTo('body');
+			var m_oTip	= $('<div id="full_mask" class="datagrid-mask-msg panel-body" style="left:49%;top:49%;z-index:99999;white-spacing:nowrap;overflow:hidden;height:auto;"></div>').appendTo('body');
+			var m_astrStack = [];
+			
+			this.Show = function(strMsg,bAddCount)
+			{
+				if (bAddCount == true)
+					m_astrStack.push(strMsg);
+				m_oMask.css
+				({
+					width	:	'100%',
+					height	:	$(document).height()
+				});
+				m_oMask.show();
+				m_oTip.html(strMsg).show();
+			}
+			
+			this.Hide = function(bSubCount,bForceClose)
+			{
+				var strLastTip = '';
+				if (m_astrStack.length > 0)
+				{
+					if (bSubCount == true)
+						strLastTip = m_astrStack.pop();
+					strLastTip = m_astrStack[m_astrStack.length - 1];
+				}
+				if (m_astrStack.length == 0 || bForceClose == true)
+				{
+					m_oMask.hide();
+					m_oTip.hide();
+					m_astrStack = [];
+				}
+				else
+					m_oTip.html(strLastTip);
+			}
+			
+			this.SetText = function(strMsg)
+			{
+				if (strMsg == undefined)
+					strMsg = ''
+				console.log(strMsg);
+				m_oTip.html(strMsg);
+			}
+		};
+	}
+	m_oFullMaskTip.Show(strMsg,bAddCount);
+};
+
+/*
+ * 隐藏显示等待界面
+ * @param optional bool bSubCount = false,是否同时减少隐藏次数的操作，用于确认是否真正需要隐藏屏蔽层
+ * @param optional bool bForceClose = false,是否强制关闭屏蔽层,默认[否]
+ * @return void
+ */
+function HideFullMask(bSubCount,bForceClose)
+{
+	if (typeof(m_oFullMaskTip) != "undefined")
+		m_oFullMaskTip.Hide(bSubCount,bForceClose);
+};
+
+document.onreadystatechange = function()
+{
+	if (!(document.readyState == 'complete' || document.readyState == 'loaded'))
+		return;
+	var m_oBindData;//地区数据
+	var m_oMatrixData;//矩阵分组数据
+	var m_mapMatrix;//项id映射
+	var m_poCurRec;
+	//定义更新地区数据函数
+	var funcQueryTree = function()
+	{
+		SetFullMask('地区数据更新中，请稍候');
+		$.ajax({
+			url : '/staticArea.php',
+			async : true,
+			cache : false,
+			type  : 'GET',
+			success:function(oRsp)
+			{
+				oRspJson = JSON.parse(oRsp);
+				if (oRspJson.success)
+				{
+					m_oBindData = oRspJson;
+					var oTreeData = [{text:'全部',id:0,children:m_oBindData.area}];
+					$('#pie_area_select').combotree('loadData',oTreeData);
+					$('#pie_area_select').combotree('setValue','全部');
+					m_poCurRec = oTreeData[0];
+				}
+				else
+					alert('更新失败:' + oRspJson.error);
+				HideFullMask();
+			},
+			error:function(strErr)
+			{
+				HideFullMask();
+				alert('更新失败:' + strErr.status + ':' + strErr.statusText);
+			}
+		})
+	}
+	//创建界面
+	$('#pie_area_select').combotree({
+		onSelect:function(poRec){
+			m_poCurRec = poRec;
+		}
+	});
+	var m_domRefresh = $('<a style="margin-right:30px;">刷新</a>').appendTo($('#head_bar'));
+	m_domRefresh.linkbutton({
+		onClick:funcQueryTree,
+	});
+	var m_domStartDateTimeTextbox = $('<input style="width:190px"/>').appendTo($('#head_bar'));
+	m_domStartDateTimeTextbox.textbox({
+		disabled:true,
+	});
+	var m_domStartDateTimeCBtn = $('<a style="margin-left:-10px;">选择开始日期</a>').appendTo($('#head_bar'));
+	var m_domStartCalendar = $('<div style="z-index:1;position:absolute;left:230px;top:30px;display:none;" ></div>').appendTo($('#head_bar'));
+	m_domStartDateTimeCBtn.linkbutton({
+		onClick:function()
+		{
+			m_domStartCalendar.calendar('moveTo',new Date());
+			m_domStartDateTimeCBtn.linkbutton('disable');
+			m_domStartCalendar.show();
+		}
+	});
+	$(m_domStartDateTimeCBtn[0].childNodes[0]).css('background-color','white');
+	m_domStartCalendar.calendar({
+		onSelect : function(oDate)
+		{
+			m_domStartCalendar.hide();
+			m_domStartDateTimeTextbox.textbox('setValue',oDate.getFullYear() + "-" + (oDate.getMonth()+1) + "-" + oDate.getDate());
+			m_domStartDateTimeCBtn.linkbutton('enable');
+		}
+	});
+	
+	var m_domEndDateTimeTextbox = $('<input style="width:190px"/>').appendTo($('#head_bar'));
+	m_domEndDateTimeTextbox.textbox({
+		disabled:true,
+	});
+	$(m_domEndDateTimeTextbox[0].nextSibling).css('margin-left','30px');
+	var m_domEndDateTimeCBtn = $('<a style="margin-left:-10px;">选择结束日期</a>').appendTo($('#head_bar'));
+	var m_domEndCalendar = $('<div style="z-index:1;position:absolute;left:523px;top:30px;display:none;" ></div>').appendTo($('#head_bar'));
+	m_domEndDateTimeCBtn.linkbutton({
+		onClick:function()
+		{
+			m_domEndCalendar.calendar('moveTo',new Date());
+			m_domEndDateTimeCBtn.linkbutton('disable');
+			m_domEndCalendar.show();
+		}
+	});
+	$(m_domEndDateTimeCBtn[0].childNodes[0]).css('background-color','white');
+	m_domEndCalendar.calendar({
+		onSelect : function(oDate)
+		{
+			m_domEndCalendar.hide();
+			m_domEndDateTimeTextbox.textbox('setValue',oDate.getFullYear() + "-" + (oDate.getMonth()+1) + "-" + oDate.getDate());
+			m_domEndDateTimeCBtn.linkbutton('enable');
+		}
+	});
+	
+	var m_domDraw = $('<a style="margin-left:30px;">统计数据</a>').appendTo($('#head_bar'));
+	m_domDraw.linkbutton({
+		onClick:function()
+		{
+			var strDate = m_domStartDateTimeTextbox.textbox('getValue');
+			if (strDate == undefined || strDate == '')
+			{
+				alert('请选择开始统计日期');
+				return;
+			}
+			var nStartTime = Date.parse(new Date(strDate)) / 1000;
+			strDate = m_domEndDateTimeTextbox.textbox('getValue');
+			if (strDate == undefined || strDate == '')
+			{
+				alert('请选择结束统计日期');
+				return;
+			}
+			var nEndTime = Date.parse(new Date(strDate)) / 1000;
+			//组装请求的id
+			var funcScanIds = function(poRec)
+			{
+				var anIds = [];
+				if (m_oBindData.ids[poRec.id])
+					anIds = anIds.concat(m_oBindData.ids[poRec.id]);
+				if (poRec.children)
+				{
+					for (var nLoop = 0;nLoop < poRec.children.length;++nLoop)
+						anIds = anIds.concat(funcScanIds(poRec.children[nLoop]));
+				}
+				return anIds;
+			}
+			var anIds = funcScanIds(m_poCurRec);
+			//请求数据
+			SetFullMask('后台统计数据中，请稍候');
+			$.ajax({
+				url : '/show/staticData.php',
+				async : true,
+				cache : false,
+				type  : 'POST',
+				data  :
+				{
+					ids:JSON.stringify(anIds),
+					start:nStartTime,
+					end:nEndTime,
+					withMatrixInfo:1,
+				},
+				success:function(oRsp)
+				{
+					oRspJson = JSON.parse(oRsp);
+					if (oRspJson.success)
+					{
+						m_oMatrixData = oRspJson.matrix;
+						m_mapMatrix = {};
+						var mapGroupTotal = {};
+						var mapItemTotal = {};
+						for (var strGroupKey in m_oMatrixData)
+						{
+							var pastrChildren = m_oMatrixData[strGroupKey].children;
+							mapGroupTotal[strGroupKey] = 0;
+							for (var strItemKey in pastrChildren)
+							{
+								m_mapMatrix[strItemKey] = pastrChildren[strItemKey];
+								if (oRspJson.statics[strItemKey])
+								{
+									mapItemTotal[strItemKey] = 0;
+									for (var strTimeKey in oRspJson.statics[strItemKey])
+									{
+										mapGroupTotal[strGroupKey] += oRspJson.statics[strItemKey][strTimeKey];
+										mapItemTotal[strItemKey] += oRspJson.statics[strItemKey][strTimeKey];
+									}
+								}
+							}
+						}
+						//构造饼状图
+						var oDrawData = [];
+						var nTotal = 0;
+						for (var strGroupKey in mapGroupTotal)
+							nTotal += mapGroupTotal[strGroupKey];
+						for (var strGroupKey in mapGroupTotal)
+							oDrawData.push([m_oMatrixData[strGroupKey].name + '(' + (mapGroupTotal[strGroupKey] * 100 / nTotal).toFixed(2) + '%)',mapGroupTotal[strGroupKey]]);
+						funcDrawPie('pie_matrix_group','按组类别统计(时间总计)',oDrawData);
+						oDrawData = [];
+						var nTotal = 0;
+						for (var strItemKey in oRspJson.statics)
+							nTotal += mapItemTotal[strItemKey];
+						for (var strItemKey in oRspJson.statics)
+							oDrawData.push([m_mapMatrix[strItemKey] + '(' + (mapItemTotal[strItemKey] * 100 / nTotal).toFixed(2) + '%)',mapItemTotal[strItemKey]]);
+						funcDrawPie('pie_matrix_detail','按功能统计(时间总计)',oDrawData);
+						//构造时间线图
+						var aoXMap = [];
+						var aoX = [];
+						var oParseToDate = new Date();
+						while (nStartTime < nEndTime + 3600 * 24)
+						{
+							oParseToDate.setTime(nStartTime * 1000);
+							var oNewNode = {text:(oParseToDate.getMonth() + 1) + '月' + oParseToDate.getDate() + '日',
+											timestamp:nStartTime};
+							aoXMap.push(oNewNode);
+							aoX.push(oNewNode.text);
+							nStartTime += 3600 * 24;
+						}
+						var aoY = [];
+						for (var strGroupKey in m_oMatrixData)
+						{
+							var pastrChildren = m_oMatrixData[strGroupKey].children;
+							var oNewNode = {name:m_oMatrixData[strGroupKey].name,data:[]};
+							for (var nScan = 0;nScan < aoXMap.length;++nScan)
+							{
+								var nCount = 0;
+								for (var strItemKey in pastrChildren)
+								{
+									if (oRspJson.statics[strItemKey] && oRspJson.statics[strItemKey][aoXMap[nScan].timestamp])
+										nCount += oRspJson.statics[strItemKey][aoXMap[nScan].timestamp];
+								}
+								oNewNode.data.push(nCount);
+							}
+							aoY.push(oNewNode);
+						}
+						/*for (var strItemKey in oRspJson.statics)
+						{
+							var oNewNode = {name:m_mapMatrix[strItemKey],data:[]};
+							for (var nScan = 0;nScan < aoXMap.length;++nScan)
+							{
+								if (oRspJson.statics[strItemKey][aoXMap[nScan].timestamp])
+									oNewNode.data.push(oRspJson.statics[strItemKey][aoXMap[nScan].timestamp]);
+								else
+									oNewNode.data.push(0);
+							}
+							aoY.push(oNewNode);
+						}*/
+						Highcharts.chart('line_grid_area', {
+							title: {
+								text: '各项功能日使用总时间统计',
+							},
+							xAxis: {
+								categories: aoX
+							},
+							yAxis: {
+								title: {
+									text: '使用时长(s)'
+								},
+								plotLines: [{
+									value: 0,
+									width: 1,
+									color: '#808080'
+								}]
+							},
+							tooltip: {
+								valueSuffix: 's'
+							},
+							legend: {
+								layout: 'vertical',
+								align: 'right',
+								verticalAlign: 'middle',
+								borderWidth: 0
+							},
+							series: aoY
+						});
+					}
+					else
+						alert('获取统计数据失败:' + oRspJson.error);
+					HideFullMask();
+				},
+				error:function(strErr)
+				{
+					HideFullMask();
+					alert('获取统计数据失败:' + strErr.status + ':' + strErr.statusText);
+				}
+			})
+		},
+	});
+	
+	$('<hr/>').appendTo($('#head_bar'));
+	
+	funcQueryTree();//初次加载数据
+	
+	//定义绘图函数
+	var funcDrawPie = function(strDomId,strTitle,aoData)
+	{
+		Highcharts.chart(strDomId,{
+			chart: {
+				plotBackgroundColor: null,
+				plotBorderWidth: null,
+				plotShadow: false,
+				type: 'pie'
+			},
+			title: {
+				text: strTitle
+			},
+			tooltip: {
+				pointFormat: '时长:{point.y}s'
+			},
+			plotOptions: {
+				pie: {
+					allowPointSelect: true,
+					cursor: 'pointer',
+					showInLegend:true,
+					dataLabels: {
+						enabled: false
+					}
+				}
+			},
+			series: [{
+				type: 'pie',
+				data: aoData
+			}]
+		});
+	}
+}
+</script>
+</body>
+</html>
